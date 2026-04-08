@@ -5,6 +5,14 @@ from student_management.v1.serializers.course_serializer import CourseSerializer
 from student_management.v1.services.course_service import CourseService
 
 
+class CourseViewList(generics.ListAPIView):
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        service = CourseService()
+        return service.list_course()
+
+
 class CourseView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
