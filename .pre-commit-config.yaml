@@ -29,6 +29,8 @@ repos:
           - django-stubs
           - djangorestframework
           - djangorestframework-stubs
+          - django-cors-headers
+          - djangorestframework-simplejwt
           - types-requests
         args:
           - "--ignore-missing-imports"

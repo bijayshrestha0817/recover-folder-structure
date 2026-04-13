@@ -9,6 +9,7 @@ description = "Django Student Management System"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=4.2",
+    "django-cors-headers>=4.9.0",
     "djangorestframework>=3.14",
     "djangorestframework-simplejwt>=5.5.1",
     "pre-commit>=4.5.1",
