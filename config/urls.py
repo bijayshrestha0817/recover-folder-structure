@@ -19,9 +19,12 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from student_management.v1.views.admin_view import AdminLogoutView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("student_management.v1.urls")),
-    path("api/token/", TokenObtainPairView.as_view()),
-    path("api/token/refresh/", TokenRefreshView.as_view()),
+    path("auth/token/", TokenObtainPairView.as_view()),
+    path("auth/token/refresh/", TokenRefreshView.as_view()),
+    path("auth/logout/", AdminLogoutView.as_view()),
 ]
