@@ -64,3 +64,13 @@ django_settings_module = "config.settings"
 
 [tool.setuptools.packages.find]
 include = ["config", "student_management"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-django>=4.12.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]

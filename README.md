@@ -247,7 +247,7 @@ pre-commit run --all-files
 Run tests:
 
 ```bash
-python manage.py test
+uv run pytest
 ```
 
 ### Database

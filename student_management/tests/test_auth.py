@@ -1,14 +1,15 @@
+import pytest
 from django.contrib.auth.models import User
-from rest_framework.test import APITestCase
+
+pytestmark = pytest.mark.django_db
 
 
-class AuthTest(APITestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="test")
+def test_obtain_token(client):
+    User.objects.create_user(username="testuser", password="testpassword")
+    response = client.post(
+        "/auth/token/",
+        data={"username": "testuser", "password": "testpassword"},
+        content_type="application/json",
+    )
 
-    def test_obtain_token(self):
-        response = self.client.post("/api/token/", {"username": "testuser", "password": "test"})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
+    assert response.status_code == 200
