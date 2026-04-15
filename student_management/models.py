@@ -8,6 +8,9 @@ class Course(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ["created_at"]
+
 
 class Student(models.Model):
     name = models.CharField(max_length=50)

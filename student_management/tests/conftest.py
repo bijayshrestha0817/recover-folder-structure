@@ -17,8 +17,8 @@ def user(db):
 
 
 @pytest.fixture
-def auth_client():
-    refresh_token = RefreshToken.for_user(user=user)
+def auth_client(client, user):
+    refresh_token = RefreshToken.for_user(user)
     access_token = str(refresh_token.access_token)
 
     client.defaults["HTTP_AUTHORIZATION"] = f"Bearer {access_token}"
