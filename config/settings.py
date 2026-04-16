@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
+from environ import Env
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,10 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-y6dv)4oy9t25*56p*hze(@l)#=m6!$7mbq=ykwwk48j2d%t@3i"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+env = Env()
+env.read_env()
+
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = env.bool("DEBUG", default=False)
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
 
 # Application definition
@@ -78,11 +85,23 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.PG_SQLite3",
+#         "NAME": BASE_DIR / "db.PG_SQLite3",
+#         "ATOMIC_REQUESTS": True,
+#     }
+# }
+
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-        "ATOMIC_REQUESTS": True,
+        "ENGINE": env.str("PG_SQL_ENGINE", default="django.db.backends.PG_SQLite3"),
+        "NAME": env.str("PG_SQL_DATABASE", default=BASE_DIR / "db.PG_SQLite3"),
+        "USER": env.str("PG_SQL_USER", default="user"),
+        "PASSWORD": env.str("PG_SQL_PASSWORD", default="password"),
+        "HOST": env.str("PG_SQL_HOST", default="localhost"),
+        "PORT": env.str("PG_SQL_PORT", default="5432"),
     }
 }
 
