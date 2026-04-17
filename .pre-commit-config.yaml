@@ -32,6 +32,7 @@ repos:
           - django-cors-headers
           - djangorestframework-simplejwt
           - types-requests
+          - django-environ
         args:
           - "--ignore-missing-imports"
           - "--no-strict-optional"

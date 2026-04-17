@@ -1,0 +1,14 @@
+Django>=4.2
+django-cors-headers>=4.9.0
+django-environ>=0.13.0
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.5.1
+pre-commit>=4.5.1
+psycopg[binary]>=3.3.3
+
+[dev]
+pre-commit>=3.5.0
+ruff>=0.4.4
+mypy>=1.10.0
+django-stubs>=4.2
+types-requests>=2.31.0

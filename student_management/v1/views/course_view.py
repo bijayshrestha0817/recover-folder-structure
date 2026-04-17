@@ -14,7 +14,7 @@ class CourseViewList(generics.ListAPIView):
 
 
 class CourseView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     serializer_class = CourseSerializer
 

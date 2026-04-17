@@ -32,8 +32,7 @@ env.read_env()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
-
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # Application definition
 
@@ -96,10 +95,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": env.str("PG_SQL_ENGINE", default="django.db.backends.PG_SQLite3"),
-        "NAME": env.str("PG_SQL_DATABASE", default=BASE_DIR / "db.PG_SQLite3"),
-        "USER": env.str("PG_SQL_USER", default="user"),
-        "PASSWORD": env.str("PG_SQL_PASSWORD", default="password"),
+        "ENGINE": env.str("PG_SQL_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": env.str("PG_SQL_DATABASE", default=BASE_DIR / "db.sqlite3"),
+        "USER": env.str("PG_SQL_USER", default="postgres"),
+        "PASSWORD": env.str("PG_SQL_PASSWORD", default="postgres"),
         "HOST": env.str("PG_SQL_HOST", default="localhost"),
         "PORT": env.str("PG_SQL_PORT", default="5432"),
     }

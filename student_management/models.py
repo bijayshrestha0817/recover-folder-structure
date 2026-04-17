@@ -9,7 +9,7 @@ class Course(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["created_at"]
+        ordering = ["-created_at"]
 
 
 class Student(models.Model):
