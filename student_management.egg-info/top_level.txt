@@ -1,2 +1,0 @@
-config
-student_management
