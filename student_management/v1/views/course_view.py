@@ -1,5 +1,4 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 
 from student_management.v1.serializers.course_serializer import CourseSerializer
 from student_management.v1.services.course_service import CourseService
@@ -28,7 +27,7 @@ class CourseView(generics.ListCreateAPIView):
 
 
 class CourseDetails(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     serializer_class = CourseSerializer
 
     def get_queryset(self):

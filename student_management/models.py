@@ -6,10 +6,10 @@ from django.db import models
 class Course(models.Model):
     name = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-id"]
 
 
 class Student(models.Model):
@@ -19,7 +19,7 @@ class Student(models.Model):
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="students")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["created_at"]
+        ordering = ["-id"]
