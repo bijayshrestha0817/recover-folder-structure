@@ -19,6 +19,7 @@ class CustomResponse(Response):
             "success": success,
             "errors": errors,
             "code": code,
+            "status": status,
             **kwargs,
         }
 

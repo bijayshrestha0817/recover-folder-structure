@@ -1,27 +1,7 @@
 from typing import Any
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, ValidationError
-
-
-class CustomAPIException(ValidationError):
-    status_code: int = status.HTTP_400_BAD_REQUEST
-    default_code: str = "error"
-
-    def __init__(self, detail: Any = None, status_code: int | None = None):
-        if status_code is not None:
-            self.status_code = int(status_code)
-
-        if detail is None:
-            detail = []
-
-        elif isinstance(detail, str):
-            detail = [detail]
-
-        elif isinstance(detail, list | dict):
-            detail = detail
-
-        super().__init__(detail)
+from rest_framework.exceptions import APIException
 
 
 class CustomException(APIException):
