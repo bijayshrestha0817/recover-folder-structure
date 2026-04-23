@@ -50,4 +50,3 @@ class CourseDetails(generics.RetrieveUpdateDestroyAPIView):
     def perform_create(self, serializer):
         service = CourseService()
         service.create_course(serializer.validated_data)
-        service.create_course(serializer.validated_data)
