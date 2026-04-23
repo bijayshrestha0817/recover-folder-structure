@@ -10,4 +10,4 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ["id", "name", "email", "age", "course", "course_name"]
 
-        ordering_fields = ["name", "email", "age", "course__name"]
+        ordering_fields = ["name", "email", "age", "course_name"]
