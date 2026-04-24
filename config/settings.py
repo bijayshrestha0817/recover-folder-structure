@@ -158,3 +158,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # If sending cookies/auth headers, also add:
 CORS_ALLOW_CREDENTIALS = True
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Student Course with Auth API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
