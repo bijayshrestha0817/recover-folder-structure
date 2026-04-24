@@ -33,6 +33,7 @@ repos:
           - djangorestframework-simplejwt
           - types-requests
           - django-environ
+          - drf-spectacular
         args:
           - "--ignore-missing-imports"
           - "--no-strict-optional"

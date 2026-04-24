@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "student_management",
     "corsheaders",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -147,6 +148,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
@@ -156,3 +158,9 @@ CORS_ALLOWED_ORIGINS = [
 ]
 # If sending cookies/auth headers, also add:
 CORS_ALLOW_CREDENTIALS = True
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Student Course with Auth API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
