@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, pagination, status
 
 from student_management.custom.custom_response import CustomResponse
@@ -9,6 +10,7 @@ class CoursePagination(pagination.PageNumberPagination):
     page_size = 10
 
 
+@extend_schema(tags=["Course"])
 class CourseView(generics.ListCreateAPIView):
     serializer_class = CourseSerializer
     pagination_class = CoursePagination
@@ -49,6 +51,7 @@ class CourseView(generics.ListCreateAPIView):
         )
 
 
+@extend_schema(tags=["Course"])
 class CourseDropdownAPIView(generics.ListAPIView):
     serializer_class = CourseSerializer
     pagination_class = None
@@ -67,6 +70,7 @@ class CourseDropdownAPIView(generics.ListAPIView):
         )
 
 
+@extend_schema(tags=["Course"])
 class CourseDetails(generics.RetrieveUpdateDestroyAPIView):
     # permission_classes = [IsAuthenticated]
     serializer_class = CourseSerializer

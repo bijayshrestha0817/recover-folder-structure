@@ -17,6 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from student_management.v1.views.admin_view import AdminLogoutView
@@ -27,4 +31,6 @@ urlpatterns = [
     path("auth/token/", TokenObtainPairView.as_view()),
     path("auth/token/refresh/", TokenRefreshView.as_view()),
     path("auth/logout/", AdminLogoutView.as_view()),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
