@@ -21,7 +21,11 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from student_management.v1.views.admin_view import AdminLogoutView, AdminMeView, RegisterView
-from student_management.v1.views.auth_view import ChangePasswordView
+from student_management.v1.views.auth_view import (
+    ChangePasswordView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -32,6 +36,8 @@ urlpatterns = [
     path("auth/logout/", AdminLogoutView.as_view()),
     path("auth/me/", AdminMeView.as_view(), name="me"),
     path("auth/change-password/", ChangePasswordView.as_view()),
+    path("auth/reset-password/", PasswordResetRequestView.as_view()),
+    path("auth/reset-password-confirm/", PasswordResetConfirmView.as_view()),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
