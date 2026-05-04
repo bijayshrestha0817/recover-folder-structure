@@ -35,7 +35,7 @@ class PasswordResetRequestView(generics.CreateAPIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        reset_link = f"{settings.FRONTEND_URL}/auth/reset-password?uid={uid}&token={token}"
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
 
         send_mail(
             subject="Reset your password",
@@ -43,7 +43,7 @@ class PasswordResetRequestView(generics.CreateAPIView):
             from_email="noreply@example.com",
             recipient_list=[email],
         )
-        return CustomResponse(message="Reset link sent to you email!")
+        return CustomResponse(message="Reset link sent to you email!!!")
 
 
 class PasswordResetConfirmView(generics.CreateAPIView):
