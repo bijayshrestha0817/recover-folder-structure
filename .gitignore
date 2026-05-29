@@ -2,3 +2,7 @@
 **/__pycache__/**
 .env
 student_management.egg-info
+
+# Planning files (planning-with-files skill) — never committed
+dev/memory/
+db.sqlite3

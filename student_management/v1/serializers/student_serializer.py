@@ -9,5 +9,3 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = ["id", "name", "email", "age", "course", "course_name"]
-
-        ordering_fields = ["name", "email", "age", "course_name"]

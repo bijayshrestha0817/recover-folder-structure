@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.test import Client
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from student_management.models import Course
+from student_management.models import Course, Student
 
 
 @pytest.fixture
@@ -26,6 +26,21 @@ def auth_client(client, user):
 
 
 @pytest.fixture
+def admin_user(db):
+    return User.objects.create_superuser(
+        username="adminuser", email="admin@example.com", password="adminpassword123"
+    )
+
+
+@pytest.fixture
+def admin_client(admin_user):
+    client = Client()
+    refresh_token = RefreshToken.for_user(admin_user)
+    client.defaults["HTTP_AUTHORIZATION"] = f"Bearer {refresh_token.access_token}"
+    return client
+
+
+@pytest.fixture
 def course(db):
     return Course.objects.create(name="Maths")
 
@@ -33,3 +48,8 @@ def course(db):
 @pytest.fixture
 def student_data(course):
     return {"name": "John Doe", "age": 20, "email": "john@gmail.com", "course": course.id}
+
+
+@pytest.fixture
+def student(course):
+    return Student.objects.create(name="John Doe", age=20, email="john@gmail.com", course=course)

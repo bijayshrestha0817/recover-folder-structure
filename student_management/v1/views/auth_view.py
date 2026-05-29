@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from student_management.custom.custom_api_exception import CustomException
 from student_management.custom.custom_response import CustomResponse
@@ -35,6 +35,7 @@ class ChangePasswordView(generics.UpdateAPIView):
 
 
 class PasswordResetRequestView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
     serializer_class = PasswordResetRequestSerializer
 
     def post(self, request, *args, **kwargs):
@@ -46,7 +47,7 @@ class PasswordResetRequestView(generics.CreateAPIView):
 
         if not user:
             raise CustomException(
-                message="User doesn't exits", status_code=status.HTTP_404_NOT_FOUND
+                message="User does not exist", status_code=status.HTTP_404_NOT_FOUND
             )
 
         if user:
@@ -75,6 +76,7 @@ class PasswordResetRequestView(generics.CreateAPIView):
 
 
 class PasswordResetConfirmView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
     serializer_class = PasswordResetConfirmSerializer
 
     def post(self, request, *args, **kwargs):
@@ -88,7 +90,7 @@ class PasswordResetConfirmView(generics.CreateAPIView):
         try:
             user_id = force_str(urlsafe_base64_decode(uid))
             user = User.objects.get(pk=user_id)
-        except Exception:
+        except (ValueError, TypeError, OverflowError, User.DoesNotExist):
             raise CustomException(  # noqa: B904
                 message="Invalid UID.",
                 status_code=400,

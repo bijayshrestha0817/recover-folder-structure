@@ -4,7 +4,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class AdminRepository:
     def get_all_admins(self):
-        return User.objects.filter(is_superuser=True)
+        return User.objects.filter(is_superuser=True).order_by("-id")
 
     def create_admin(self, data):
         return User.objects.create_superuser(**data)

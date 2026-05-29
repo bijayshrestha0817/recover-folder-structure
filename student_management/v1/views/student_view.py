@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from student_management.custom.custom_response import CustomResponse
 from student_management.v1.serializers.student_serializer import StudentSerializer
@@ -8,21 +9,22 @@ from student_management.v1.services.student_service import StudentService
 
 @extend_schema(tags=["Student"])
 class StudentViewList(generics.ListAPIView):
+    """Public read-only list of students."""
+
+    permission_classes = [AllowAny]
     serializer_class = StudentSerializer
 
     def get_queryset(self):
-        service = StudentService()
-        return service.list_students()
+        return StudentService().list_students()
 
 
 @extend_schema(tags=["Student"])
 class StudentView(generics.ListCreateAPIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = StudentSerializer
-    service = StudentService()
 
     def get_queryset(self):
-        return self.service.list_students()
+        return StudentService().list_students()
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -36,7 +38,7 @@ class StudentView(generics.ListCreateAPIView):
             )
         serializer = self.get_serializer(queryset, many=True)
         return CustomResponse(
-            data={"count": queryset.count, "results": serializer.data},
+            data={"count": queryset.count(), "results": serializer.data},
             message="Student fetched successfully",
             status=status.HTTP_200_OK,
         )
@@ -44,7 +46,7 @@ class StudentView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        student = self.service.create_student(serializer.validated_data)
+        student = StudentService().create_student(serializer.validated_data)
         return CustomResponse(
             data=StudentSerializer(student).data,
             message="Student created successfully",
@@ -54,12 +56,11 @@ class StudentView(generics.ListCreateAPIView):
 
 @extend_schema(tags=["Student"])
 class StudentDetails(generics.RetrieveUpdateDestroyAPIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = StudentSerializer
-    service = StudentService()
 
     def get_queryset(self):
-        return self.service.list_students()
+        return StudentService().list_students()
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -75,7 +76,7 @@ class StudentDetails(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        student = self.service.update_student(instance, serializer.validated_data)
+        student = StudentService().update_student(instance, serializer.validated_data)
         return CustomResponse(
             data=StudentSerializer(student).data,
             message="Student updated successfully",
@@ -84,7 +85,7 @@ class StudentDetails(generics.RetrieveUpdateDestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.service.delete_student(instance)
+        StudentService().delete_student(instance)
         return CustomResponse(
             message="Student deleted successfully", status=status.HTTP_204_NO_CONTENT
         )

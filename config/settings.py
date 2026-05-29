@@ -22,12 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-y6dv)4oy9t25*56p*hze(@l)#=m6!$7mbq=ykwwk48j2d%t@3i"
-
-
 env = Env()
 env.read_env()
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env.str(
+    "SECRET_KEY",
+    default="django-insecure-y6dv)4oy9t25*56p*hze(@l)#=m6!$7mbq=ykwwk48j2d%t@3i",
+)
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -53,7 +55,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -149,7 +150,14 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # Secure by default: endpoints require authentication unless they opt out with
+    # an explicit `permission_classes = [AllowAny]` (public lists, auth, registration).
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Render every error through the same envelope as CustomResponse.
+    "EXCEPTION_HANDLER": "student_management.custom.exception_handler.custom_exception_handler",
 }
 
 

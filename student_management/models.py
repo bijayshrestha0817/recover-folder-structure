@@ -11,6 +11,9 @@ class Course(models.Model):
     class Meta:
         ordering = ["-id"]
 
+    def __str__(self):
+        return self.name
+
 
 class Student(models.Model):
     name = models.CharField(max_length=50)
@@ -23,3 +26,6 @@ class Student(models.Model):
 
     class Meta:
         ordering = ["-id"]
+
+    def __str__(self):
+        return f"{self.name} ({self.email})"

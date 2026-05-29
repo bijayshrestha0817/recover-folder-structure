@@ -15,9 +15,9 @@ class StudentService:
 
     def create_student(self, validated_data):
         repo = StudentRepository()
-        if Student.objects.filter(email=validated_data["email"]):
+        if Student.objects.filter(email=validated_data["email"]).exists():
             raise CustomException(
-                message="Student with this email already exits",
+                message="Student with this email already exists",
                 status_code=status.HTTP_409_CONFLICT,
             )
         return repo.create_student(validated_data)
