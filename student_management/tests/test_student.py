@@ -126,3 +126,44 @@ def test_delete_student(auth_client, student):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not Student.objects.filter(id=student.id).exists()
+
+
+# --- Filtering / search / ordering ---
+
+
+def test_list_student_search(auth_client, course):
+    Student.objects.create(name="Alice", age=20, email="alice@example.com", course=course)
+    Student.objects.create(name="Bob", age=22, email="bob@example.com", course=course)
+
+    response = auth_client.get("/api/v1/students/?search=alice")
+
+    assert response.status_code == status.HTTP_200_OK
+    results = response.json()["data"]["results"]
+    assert len(results) == 1
+    assert results[0]["name"] == "Alice"
+
+
+def test_list_student_filter_by_course(auth_client, course):
+    from student_management.models import Course
+
+    other_course = Course.objects.create(name="Physics")
+    Student.objects.create(name="Alice", age=20, email="alice@example.com", course=course)
+    Student.objects.create(name="Bob", age=22, email="bob@example.com", course=other_course)
+
+    response = auth_client.get(f"/api/v1/students/?course={other_course.id}")
+
+    assert response.status_code == status.HTTP_200_OK
+    results = response.json()["data"]["results"]
+    assert len(results) == 1
+    assert results[0]["name"] == "Bob"
+
+
+def test_list_student_ordering(auth_client, course):
+    Student.objects.create(name="Alice", age=30, email="alice@example.com", course=course)
+    Student.objects.create(name="Bob", age=20, email="bob@example.com", course=course)
+
+    response = auth_client.get("/api/v1/students/?ordering=age")
+
+    assert response.status_code == status.HTTP_200_OK
+    ages = [r["age"] for r in response.json()["data"]["results"]]
+    assert ages == sorted(ages)

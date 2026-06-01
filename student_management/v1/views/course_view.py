@@ -1,7 +1,8 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, pagination, status
+from rest_framework import generics, pagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from student_management.core.views import BaseListCreateView, BaseRetrieveUpdateDestroyView
 from student_management.custom.custom_response import CustomResponse
 from student_management.v1.serializers.course_serializer import CourseSerializer
 from student_management.v1.services.course_service import CourseService
@@ -12,44 +13,14 @@ class CoursePagination(pagination.PageNumberPagination):
 
 
 @extend_schema(tags=["Course"])
-class CourseView(generics.ListCreateAPIView):
+class CourseView(BaseListCreateView):
     permission_classes = [IsAuthenticated]
     serializer_class = CourseSerializer
+    service_class = CourseService
+    entity_name = "Course"
     pagination_class = CoursePagination
-
-    def get_queryset(self):
-        return CourseService().list_course()
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-
-            return CustomResponse(
-                data=self.get_paginated_response(serializer.data).data,
-                message="Course fetched successfully",
-                status=status.HTTP_200_OK,
-            )
-
-        serializer = self.get_serializer(queryset, many=True)
-        return CustomResponse(
-            data={"count": queryset.count(), "results": serializer.data},
-            message="Course fetched successfully",
-            status=status.HTTP_200_OK,
-        )
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        course = CourseService().create_course(serializer.validated_data)
-        return CustomResponse(
-            data=CourseSerializer(course).data,
-            message="Course created successfully",
-            status=status.HTTP_201_CREATED,
-        )
+    search_fields = ["name"]
+    ordering_fields = ["name", "id"]
 
 
 @extend_schema(tags=["Course"])
@@ -61,7 +32,7 @@ class CourseDropdownAPIView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return CourseService().list_course()
+        return CourseService().list()
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -74,37 +45,8 @@ class CourseDropdownAPIView(generics.ListAPIView):
 
 
 @extend_schema(tags=["Course"])
-class CourseDetails(generics.RetrieveUpdateDestroyAPIView):
+class CourseDetails(BaseRetrieveUpdateDestroyView):
     permission_classes = [IsAuthenticated]
     serializer_class = CourseSerializer
-
-    def get_queryset(self):
-        return CourseService().list_course()
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return CustomResponse(
-            data=serializer.data,
-            message="Course details fetched successfully",
-            status=status.HTTP_200_OK,
-        )
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        course = CourseService().update_course(instance, serializer.validated_data)
-        return CustomResponse(
-            data=CourseSerializer(course).data,
-            message="Course updated successfully",
-            status=status.HTTP_200_OK,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        CourseService().delete_course(instance)
-        return CustomResponse(
-            message="Course deleted successfully", status=status.HTTP_204_NO_CONTENT
-        )
+    service_class = CourseService
+    entity_name = "Course"

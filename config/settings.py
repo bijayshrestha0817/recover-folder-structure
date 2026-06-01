@@ -11,9 +11,14 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from environ import Env
+
+# True while the test suite runs (pytest imports its own package first). Used to
+# run Celery tasks inline so the suite needs no broker.
+TESTING = "pytest" in sys.modules
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +52,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "django_filters",
     "student_management",
     "corsheaders",
     "rest_framework_simplejwt.token_blacklist",
@@ -104,6 +110,8 @@ DATABASES = {
         "PASSWORD": env.str("PG_SQL_PASSWORD", default="postgres"),
         "HOST": env.str("PG_SQL_HOST", default="localhost"),
         "PORT": env.str("PG_SQL_PORT", default="5432"),
+        # Wrap every request in a DB transaction (request-level atomicity).
+        "ATOMIC_REQUESTS": True,
     }
 }
 
@@ -158,6 +166,11 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Render every error through the same envelope as CustomResponse.
     "EXCEPTION_HANDLER": "student_management.custom.exception_handler.custom_exception_handler",
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
 }
 
 
@@ -183,3 +196,16 @@ EMAIL_HOST_USER = os.environ.get("user_email")
 EMAIL_HOST_PASSWORD = os.environ.get("user_password")
 
 FRONTEND_URL = "http://localhost:3000"
+
+
+# Celery — async task queue (used for sending email off the request thread).
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 60
+
+# Run tasks synchronously during tests (no broker/worker required). Can also be
+# forced in any environment via the env var.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=TESTING)
+CELERY_TASK_EAGER_PROPAGATES = True

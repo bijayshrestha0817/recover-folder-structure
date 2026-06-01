@@ -120,3 +120,29 @@ def test_delete_course(auth_client, course):
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not Course.objects.filter(id=course.id).exists()
+
+
+# --- Filtering / search / ordering ---
+
+
+def test_list_course_search(auth_client):
+    Course.objects.create(name="Maths")
+    Course.objects.create(name="Physics")
+
+    response = auth_client.get("/api/v1/courses/?search=phys")
+
+    assert response.status_code == status.HTTP_200_OK
+    results = response.json()["data"]["results"]
+    assert len(results) == 1
+    assert results[0]["name"] == "Physics"
+
+
+def test_list_course_ordering(auth_client):
+    Course.objects.create(name="Biology")
+    Course.objects.create(name="Algebra")
+
+    response = auth_client.get("/api/v1/courses/?ordering=name")
+
+    assert response.status_code == status.HTTP_200_OK
+    names = [r["name"] for r in response.json()["data"]["results"]]
+    assert names == sorted(names)

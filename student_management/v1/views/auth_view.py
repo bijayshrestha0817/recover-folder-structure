@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import generics, status
@@ -9,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from student_management.custom.custom_api_exception import CustomException
 from student_management.custom.custom_response import CustomResponse
+from student_management.tasks import send_password_reset_email
 from student_management.v1.serializers.auth_serializer import (
     ChangePasswordSerializer,
     PasswordResetConfirmSerializer,
@@ -50,24 +50,13 @@ class PasswordResetRequestView(generics.CreateAPIView):
                 message="User does not exist", status_code=status.HTTP_404_NOT_FOUND
             )
 
-        if user:
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
 
-            reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
-
-            try:
-                send_mail(
-                    subject="Reset your password",
-                    message=f"Click the link to reset your password:\n{reset_link}",
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[email],
-                )
-            except Exception:
-                raise CustomException(  # noqa: B904
-                    message="Failed to send reset email. Try again later.",
-                    status_code=500,
-                )
+        # Send off the request thread — the API responds immediately and the
+        # email delivery (with retries) happens in a Celery worker.
+        send_password_reset_email.delay(email, reset_link)
 
         return CustomResponse(
             message="Reset link has been sent to your email.",

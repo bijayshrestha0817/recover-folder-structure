@@ -15,7 +15,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _serialize_all_students():
-    return StudentSerializer(StudentRepository().get_all_students(), many=True).data
+    return StudentSerializer(StudentRepository().all(), many=True).data
 
 
 def _make_students(course, prefix, count):

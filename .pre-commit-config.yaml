@@ -34,6 +34,8 @@ repos:
           - types-requests
           - django-environ
           - drf-spectacular
+          - django-filter
+          - celery
         args:
           - "--ignore-missing-imports"
           - "--no-strict-optional"
