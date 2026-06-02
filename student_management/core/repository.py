@@ -25,11 +25,30 @@ class BaseRepository:
         if self.model is None:
             raise NotImplementedError(f"{type(self).__name__} must define `model`.")
 
+    # --- soft-delete / audit awareness ---
+
+    def _has_field(self, name: str) -> bool:
+        return any(field.name == name for field in self.model._meta.fields)
+
+    @property
+    def _soft_delete(self) -> bool:
+        return self._has_field("is_deleted")
+
+    @property
+    def _audited(self) -> bool:
+        return self._has_field("created_by")
+
     # --- query builder (read) ---
 
     def get_queryset(self) -> QuerySet:
-        """Base queryset with the configured relations pre-joined."""
+        """Base queryset with the configured relations pre-joined.
+
+        Soft-deleted rows are hidden here (query-shaping stays in this layer), so
+        every read helper, list, and detail lookup only ever sees live records.
+        """
         queryset = self.model._default_manager.all()
+        if self._soft_delete:
+            queryset = queryset.filter(is_deleted=False)
         if self.select_related:
             queryset = queryset.select_related(*self.select_related)
         if self.prefetch_related:
@@ -50,18 +69,29 @@ class BaseRepository:
         return self.get_queryset().filter(pk=pk).first()
 
     def exists(self, **kwargs) -> bool:
-        return self.model._default_manager.filter(**kwargs).exists()
+        queryset = self.model._default_manager.filter(**kwargs)
+        if self._soft_delete:
+            queryset = queryset.filter(is_deleted=False)
+        return queryset.exists()
 
     # --- mutations (write) ---
 
-    def create(self, data: dict):
+    def create(self, data: dict, user=None):
+        if self._audited and user is not None:
+            data = {**data, "created_by": user, "updated_by": user}
         return self.model._default_manager.create(**data)
 
-    def update(self, instance, data: dict):
+    def update(self, instance, data: dict, user=None):
         for field, value in data.items():
             setattr(instance, field, value)
+        if self._audited and user is not None:
+            instance.updated_by = user
         instance.save()
         return instance
 
-    def delete(self, instance) -> None:
-        instance.delete()
+    def delete(self, instance, user=None) -> None:
+        """Soft-delete when the model supports it, otherwise remove the row."""
+        if hasattr(instance, "soft_delete"):
+            instance.soft_delete(user=user)
+        else:
+            instance.delete()

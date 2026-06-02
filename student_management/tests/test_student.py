@@ -125,7 +125,12 @@ def test_delete_student(auth_client, student):
     response = auth_client.delete(f"/api/v1/students/{student.id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert not Student.objects.filter(id=student.id).exists()
+    # Soft delete: the row is kept but flagged and hidden from the API.
+    student.refresh_from_db()
+    assert student.is_deleted is True
+    assert (
+        auth_client.get(f"/api/v1/students/{student.id}/").status_code == status.HTTP_404_NOT_FOUND
+    )
 
 
 # --- Filtering / search / ordering ---

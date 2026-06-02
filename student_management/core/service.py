@@ -51,18 +51,18 @@ class BaseService:
         return instance
 
     @transaction.atomic
-    def create(self, validated_data):
+    def create(self, validated_data, user=None):
         self._ensure_unique(validated_data)
-        return self.repo.create(validated_data)
+        return self.repo.create(validated_data, user=user)
 
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data, user=None):
         self._ensure_unique(validated_data, exclude_pk=instance.pk)
-        return self.repo.update(instance, validated_data)
+        return self.repo.update(instance, validated_data, user=user)
 
     @transaction.atomic
-    def delete(self, instance):
-        return self.repo.delete(instance)
+    def delete(self, instance, user=None):
+        return self.repo.delete(instance, user=user)
 
     def _ensure_unique(self, data, exclude_pk=None) -> None:
         if not self.unique_field or self.unique_field not in data:

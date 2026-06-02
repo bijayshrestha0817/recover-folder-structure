@@ -5,6 +5,7 @@ boilerplate. Three base classes mirror the project's layers:
 
 | Layer | Base class | File |
 |-------|-----------|------|
+| Model (audit trail + soft delete) | `AuditModel` | `core/models.py` |
 | Repository (data access + query builder) | `BaseRepository` | `core/repository.py` |
 | Service (business logic + errors) | `BaseService` | `core/service.py` |
 | View (HTTP + `CustomResponse` envelope) | `BaseListCreateView`, `BaseRetrieveUpdateDestroyView` | `core/views.py` |
@@ -13,8 +14,14 @@ boilerplate. Three base classes mirror the project's layers:
 
 ### 1. Model — `models.py`
 
+Extend `AuditModel` (not `models.Model`) to inherit timestamps, audit fields, and
+soft delete:
+
 ```python
-class Teacher(models.Model):
+from student_management.core.models import AuditModel
+
+
+class Teacher(AuditModel):
     name = models.CharField(max_length=50)
     email = models.EmailField(unique=True, db_index=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="teachers")
@@ -110,7 +117,32 @@ wrapped in the standard `CustomResponse` envelope with `404`/`409` handling.
 - **Create** `POST` — `409` on duplicate `unique_field`, `201` on success.
 - **Retrieve** `GET /<pk>/` — standard `404` for missing id.
 - **Update** `PUT`/`PATCH` — duplicate check excludes the current row.
-- **Delete** `DELETE /<pk>/` — `204`.
+- **Delete** `DELETE /<pk>/` — `204`. **Soft delete:** the row is flagged
+  (`is_deleted=True`, `deleted_at` set), not removed, and disappears from every
+  read path.
+
+## Audit trail & soft delete (`AuditModel`)
+
+Any model extending `AuditModel` gets, with no extra wiring:
+
+- `created_at` / `updated_at` — managed timestamps.
+- `created_by` / `updated_by` — the acting user, stamped by `BaseRepository` from
+  `request.user` (the view passes it through `get_acting_user()`; anonymous → `None`).
+  `editable=False`, so it can never be set from request input.
+- `is_deleted` (indexed) / `deleted_at` — soft-delete marker, plus
+  `instance.soft_delete(user=None)` and `instance.restore()`.
+
+**Where the filtering lives:** soft-deleted rows are hidden in
+`BaseRepository.get_queryset()` (and `exists()`), keeping query-shaping in the
+repository layer. The model's **default manager is left untouched on purpose** —
+reverse relations (`teacher.department.teachers`) and cascades still see every
+row, avoiding Django's base-manager footgun. To reach deleted rows directly, query
+the model manager with `is_deleted=True`.
+
+**Known limitation:** a DB-unique column (e.g. `email`) stays reserved by a
+soft-deleted row — the service uniqueness check looks at live rows only, so
+re-creating with a soft-deleted value would hit the database constraint. Restore
+the row or hard-delete it if you need the value back.
 
 ## Customizing
 

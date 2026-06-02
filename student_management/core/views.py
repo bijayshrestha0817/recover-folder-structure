@@ -17,6 +17,15 @@ class ServiceViewMixin:
             raise NotImplementedError(f"{type(self).__name__} must define `service_class`.")
         return service_class()
 
+    def get_acting_user(self):
+        """The authenticated user driving the request, or ``None`` if anonymous.
+
+        Threaded into the service so the repository can stamp ``created_by`` /
+        ``updated_by`` (an ``AnonymousUser`` is never a valid FK, hence ``None``)."""
+        request = getattr(self, "request", None)
+        user = getattr(request, "user", None)
+        return user if getattr(user, "is_authenticated", False) else None
+
 
 class BaseListCreateView(ServiceViewMixin, generics.ListCreateAPIView):
     """Generic GET (paginated list) + POST (create) wrapped in CustomResponse.
@@ -61,7 +70,7 @@ class BaseListCreateView(ServiceViewMixin, generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.get_service().create(serializer.validated_data)
+        instance = self.get_service().create(serializer.validated_data, user=self.get_acting_user())
         return CustomResponse(
             data=self.get_serializer(instance).data,
             message=f"{self.entity_name} created successfully",
@@ -89,7 +98,9 @@ class BaseRetrieveUpdateDestroyView(ServiceViewMixin, generics.RetrieveUpdateDes
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        updated = self.get_service().update(instance, serializer.validated_data)
+        updated = self.get_service().update(
+            instance, serializer.validated_data, user=self.get_acting_user()
+        )
         return CustomResponse(
             data=self.get_serializer(updated).data,
             message=f"{self.entity_name} updated successfully",
@@ -98,7 +109,7 @@ class BaseRetrieveUpdateDestroyView(ServiceViewMixin, generics.RetrieveUpdateDes
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.get_service().delete(instance)
+        self.get_service().delete(instance, user=self.get_acting_user())
         return CustomResponse(
             message=f"{self.entity_name} deleted successfully",
             status=status.HTTP_204_NO_CONTENT,
