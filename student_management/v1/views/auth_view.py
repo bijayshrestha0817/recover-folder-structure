@@ -5,6 +5,8 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from student_management.custom.custom_api_exception import CustomException
 from student_management.custom.custom_response import CustomResponse
@@ -16,9 +18,18 @@ from student_management.v1.serializers.auth_serializer import (
 )
 
 
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    """JWT login, rate-limited to slow brute-force / credential-stuffing."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+
 class ChangePasswordView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ChangePasswordSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "change_password"
 
     def put(self, request, *args, **kwargs):
         serializer = self.get_serializer(
@@ -37,6 +48,8 @@ class ChangePasswordView(generics.UpdateAPIView):
 class PasswordResetRequestView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetRequestSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset"
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -45,21 +58,20 @@ class PasswordResetRequestView(generics.CreateAPIView):
         email = serializer.validated_data["email"]
         user = User.objects.filter(email=email).first()
 
-        if not user:
-            raise CustomException(
-                message="User does not exist", status_code=status.HTTP_404_NOT_FOUND
-            )
+        # Non-enumerating: only send the email when the account exists, but always
+        # return the same 200 response so an attacker can't probe which emails are
+        # registered.
+        if user:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
 
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
-        reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
-
-        # Send off the request thread — the API responds immediately and the
-        # email delivery (with retries) happens in a Celery worker.
-        send_password_reset_email.delay(email, reset_link)
+            # Send off the request thread — the API responds immediately and the
+            # email delivery (with retries) happens in a Celery worker.
+            send_password_reset_email.delay(email, reset_link)
 
         return CustomResponse(
-            message="Reset link has been sent to your email.",
+            message="If an account exists for that email, a reset link has been sent.",
             status=status.HTTP_200_OK,
         )
 
@@ -67,6 +79,8 @@ class PasswordResetRequestView(generics.CreateAPIView):
 class PasswordResetConfirmView(generics.CreateAPIView):
     permission_classes = [AllowAny]
     serializer_class = PasswordResetConfirmSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset"
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

@@ -18,19 +18,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from student_management.v1.views.admin_view import AdminLogoutView, AdminMeView, RegisterView
 from student_management.v1.views.auth_view import (
     ChangePasswordView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    ThrottledTokenObtainPairView,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("student_management.v1.urls")),
-    path("auth/token/", TokenObtainPairView.as_view()),
+    path("auth/token/", ThrottledTokenObtainPairView.as_view()),
     path("auth/token/refresh/", TokenRefreshView.as_view()),
     path("register/", RegisterView.as_view(), name="register"),
     path("auth/logout/", AdminLogoutView.as_view()),

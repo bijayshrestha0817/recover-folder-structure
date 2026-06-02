@@ -1,4 +1,6 @@
 import json
+import logging
+from unittest import mock
 
 import pytest
 from django.contrib.auth.models import User
@@ -88,14 +90,17 @@ def test_reset_request_sends_email(client, settings):
     assert len(mail.outbox) == 1
 
 
-def test_reset_request_unknown_email(client):
+def test_reset_request_unknown_email_is_non_enumerating(client):
+    # Unknown emails get the SAME 200 response as known ones (no account
+    # enumeration) and no email is sent.
     response = client.post(
         "/auth/reset-password/",
         data=json.dumps({"email": "missing@example.com"}),
         content_type="application/json",
     )
 
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_200_OK
+    assert len(mail.outbox) == 0
 
 
 # --- Password reset confirm (public) ---
@@ -138,3 +143,37 @@ def test_reset_confirm_invalid_token(client):
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# --- Throttling ---
+
+
+def test_reset_request_is_throttled(client):
+    # Rate is "5/hour" (DEFAULT_THROTTLE_RATES["password_reset"]); the 6th call
+    # within the window must be rejected with 429.
+    payload = json.dumps({"email": "missing@example.com"})
+    for _ in range(5):
+        ok = client.post("/auth/reset-password/", data=payload, content_type="application/json")
+        assert ok.status_code == status.HTTP_200_OK
+
+    throttled = client.post("/auth/reset-password/", data=payload, content_type="application/json")
+    assert throttled.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+
+
+# --- Async email failure handling ---
+
+
+def test_reset_email_permanent_failure_is_logged(caplog):
+    # On the final attempt (retries == max_retries) the task must log the
+    # permanent failure at ERROR and re-raise, instead of swallowing it.
+    from student_management.tasks import send_password_reset_email
+
+    with mock.patch("student_management.tasks.send_mail", side_effect=Exception("smtp down")):
+        with caplog.at_level(logging.ERROR, logger="student_management.tasks"):
+            with pytest.raises(Exception, match="smtp down"):
+                send_password_reset_email.apply(
+                    args=["u@example.com", "http://example.com/reset"],
+                    retries=send_password_reset_email.max_retries,
+                )
+
+    assert any("permanently failed" in record.message for record in caplog.records)

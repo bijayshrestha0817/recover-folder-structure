@@ -171,6 +171,24 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    # Per-endpoint rate limits (see ScopedRateThrottle usage on auth views).
+    # Protects against brute-force login and password-reset email bombing.
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "10/min",
+        "password_reset": "5/hour",
+        "change_password": "10/min",
+    },
+}
+
+# Cache backend — also the store DRF throttling counts against. LocMem is fine for
+# a single process; swap for Redis/Memcached when running multiple workers.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
 }
 
 
@@ -196,6 +214,25 @@ EMAIL_HOST_USER = os.environ.get("user_email")
 EMAIL_HOST_PASSWORD = os.environ.get("user_password")
 
 FRONTEND_URL = "http://localhost:3000"
+
+
+# Logging — surface task/email failures instead of swallowing them.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "student_management": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}
 
 
 # Celery — async task queue (used for sending email off the request thread).

@@ -38,6 +38,8 @@ zero reads the argument (or infers intent) and picks a mode:
 | `zero`, `hey zero`, `zero review` | **REVIEW** (default) | Load memory → refresh → review system → report state → **propose** next enhancement(s) → wait for approval before touching app code. |
 | `zero auto`, `zero continue` | **AUTO** | Same load/review, then **autonomously implement** the next item(s) from the active plan, verifying each, looping until the plan is done or a blocker is hit. No approval prompts for code changes. |
 | `zero status` | **STATUS** | Read-only. Refresh memory + report state. Never changes app code. |
+| `zero watch`, `zero check prs` | **WATCH** | Poll your open PRs (GitHub + Azure DevOps) once → notify (email + desktop) on **new** activity → for reviewer comments, apply via `review-pr --no-push` and **pause for approval before pushing**. See [WATCH.md](WATCH.md). |
+| `zero watch start` / `zero watch stop` | **WATCH (scheduled)** | Register / remove a recurring poll (every N min) via the `schedule` skill. Each scheduled run does WATCH and stops before pushing. |
 | `zero <feature request>` | **DIRECT** | Treat the text as the goal: plan it (planning-with-files), then behave per REVIEW (propose) unless the user also said "auto". |
 
 Announce the mode on entry, e.g. `zero engaged — REVIEW mode.`
@@ -76,6 +78,38 @@ Announce the mode on entry, e.g. `zero engaged — REVIEW mode.`
 ### 6. Always close by updating memory
 - Append a dated `TIMELINE.md` entry for what happened this session.
 - Refresh `STATE.md`.
+
+## PR Watch (notify + apply)
+
+WATCH mode keeps an eye on **your own open PRs** and pulls reviewer feedback into the
+apply loop. Full mechanics (commands per platform, state format, notify, handoff) live
+in **[WATCH.md](WATCH.md)**. The shape:
+
+1. **Poll** your open PRs on every platform that has auth — GitHub (`gh` or
+   `GH_TOKEN`/`GITHUB_TOKEN`) and Azure DevOps (`az` + `AZURE_DEVOPS_EXT_PAT`).
+2. **Diff** against `dev/memory/zero/pr_watch_state.json` to find **new** activity since
+   the last poll: a new reviewer comment/review, or a commit pushed by someone other than
+   you. (First sighting of a PR is recorded silently — nothing to diff against yet.)
+3. **Notify on both channels** for each PR with new activity:
+   - Email — `python .claude/skills/zero/notify_email.py "<subject>" "<body>"`.
+   - Desktop — the `PushNotification` tool.
+   A failure on one channel is logged, never fatal; the apply step still runs.
+4. **Apply (wait-to-push)** — for PRs with reviewer comments / change requests, check out
+   the PR branch and run **`review-pr <n> --no-push`** (applies + verifies, does not push
+   or reply). Then **report and pause for approval** before any push/reply. New commits
+   with no comments → notify only.
+5. **Record** — update `pr_watch_state.json` and append a block to
+   `dev/memory/zero/PR_WATCH.md` (what was new, who, what zero did).
+
+**Scheduling:** `zero watch` is one on-demand poll. `zero watch start` registers a recurring
+poll via the `schedule` skill (e.g. `*/15 * * * *` running `zero watch`); `zero watch stop`
+removes it. Scheduled runs notify automatically but still stop before pushing.
+
+**Prerequisites (one-time setup):** a GitHub token/`gh` and/or an Azure DevOps PAT (env
+only), and — for email — SMTP creds in env (`ZERO_SMTP_USER`/`ZERO_SMTP_PASSWORD`, or the
+app's `user_email`/`user_password`). If a platform or channel is unconfigured, zero watches
+what it can and says what is missing. **Never hardcode a token or password in a tracked
+file** — `.claude/` is committed; secrets belong in env or a gitignored `.env`.
 
 ## Delegation map (don't reinvent)
 
@@ -180,3 +214,9 @@ Lint: <pre-commit status or "not run">
 7. **Delegate, don't duplicate** — use the skills in the delegation map for real work.
 8. **Keep CONTEXT.md honest** — if a recalled fact contradicts the code, trust the code
    and fix the doc.
+9. **WATCH never auto-ships** — it notifies and applies (`review-pr --no-push`), then waits
+   for approval before any push or thread reply. No pushing from a scheduled poll.
+10. **WATCH notifies only on NEW activity** — diff against `pr_watch_state.json`; never
+    re-notify the same comment/commit. Watch acts only on PRs **you authored**.
+11. **Secrets from env only** — tokens and SMTP passwords come from the environment (or a
+    gitignored `.env`), never hardcoded into `.claude/` files (which are committed).

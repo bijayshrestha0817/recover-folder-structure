@@ -19,7 +19,7 @@ services:
 
   web:
     build: .
-    command: uv run manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
@@ -32,7 +32,7 @@ services:
 
   worker:
     build: .
-    command: uv run celery -A config worker -l info
+    command: celery -A config worker -l info
     volumes:
       - .:/app
     env_file:

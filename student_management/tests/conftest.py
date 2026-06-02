@@ -1,9 +1,19 @@
 import pytest
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import Client
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from student_management.models import Course, Student
+
+
+@pytest.fixture(autouse=True)
+def _clear_throttle_cache():
+    """Reset the rate-limit counters (kept in the cache) around every test so
+    throttle state from one test never bleeds into the next."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
