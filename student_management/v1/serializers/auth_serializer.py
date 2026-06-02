@@ -1,11 +1,27 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from student_management.custom.custom_api_exception import CustomException
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    # Email is the lookup key for password reset, so it must be present and map
+    # to exactly one account. Django's default User.email is blank/non-unique;
+    # enforce required + case-insensitive uniqueness here (mirrors Student.email).
+    email = serializers.EmailField(
+        required=True,
+        allow_blank=False,
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                lookup="iexact",
+                message="A user with this email already exists.",
+            )
+        ],
+    )
+
     class Meta:
         model = User
         fields = ["username", "email", "password"]

@@ -56,7 +56,9 @@ class PasswordResetRequestView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-        user = User.objects.filter(email=email).first()
+        # Case-insensitive to match the case-insensitive uniqueness enforced at
+        # registration, so "User@x.com" resolves the same account as "user@x.com".
+        user = User.objects.filter(email__iexact=email).first()
 
         # Non-enumerating: only send the email when the account exists, but always
         # return the same 200 response so an attacker can't probe which emails are

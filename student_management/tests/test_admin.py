@@ -91,6 +91,27 @@ def test_register_public(client):
     assert registered.check_password("strongpass123")
 
 
+def test_register_duplicate_email_rejected(client):
+    # Email is the password-reset lookup key, so it must be unique (and
+    # case-insensitively so) — otherwise a reset can target the wrong account.
+    User.objects.create_user(username="first", email="dupe@example.com", password="strongpass123")
+    payload = {"username": "second", "email": "DUPE@example.com", "password": "strongpass123"}
+
+    response = client.post("/register/", data=json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert not User.objects.filter(username="second").exists()
+
+
+def test_register_blank_email_rejected(client):
+    payload = {"username": "noemail", "email": "", "password": "strongpass123"}
+
+    response = client.post("/register/", data=json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert not User.objects.filter(username="noemail").exists()
+
+
 # --- Logout (IsAuthenticated) ---
 
 
